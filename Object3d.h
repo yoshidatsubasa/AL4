@@ -143,6 +143,9 @@ private: // 静的メンバ変数
 	//static unsigned short indices[planeCount * 3];
 	static std::vector<unsigned short>indices;
 
+
+
+
 private:// 静的メンバ関数
 	/// <summary>
 	/// デスクリプタヒープの初期化
