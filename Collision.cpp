@@ -112,3 +112,61 @@ bool Collision::CheckSphere2Triangle(const Sphere& sphere, const Triangle& trian
 	}
 	return true;
 }
+bool Collision::CheckRay2Plane(const Ray& ray, const Plane& plane, float* distance, DirectX::XMVECTOR* inter) {
+	const float epsilon = 1.0e-5f;   //誤差吸収用の微小な値
+	//曲法線とレイの方向ベクトルの内積
+	float d1 = XMVector3Dot(plane.normal, ray.dir).m128_f32[0];
+	//裏面には当たらない
+	if (d1 > -epsilon) { return false; }
+	//始点と原点の距離　(平面の法線方向)
+	//曲法線とレイの始点座標　(位置ベクトル)の内積
+	float d2 = XMVector3Dot(plane.normal, ray.start).m128_f32[0];
+	//始点と平面の距離　(平面の法線方向)
+	float dist = d2 - plane.distance;
+	//始点と平面の距離　(レイ方向)
+	float t = dist / -d1;
+	//交点が始点より後ろにあるので、当たらない
+	if (t < 0)return false;
+	//距離を書き込む
+	if (distance) { *distance = t; }
+	//交点を計算
+	if (inter) { *inter = ray.start + t * ray.dir; }
+	return true;
+}
+bool Collision::CheckRay2Triangle(const Ray& ray, const Triangle& triangle, float* distance, DirectX::XMVECTOR* inter)
+{
+	//三角形が乗っている平面を算出
+	Plane plane;
+	XMVECTOR interPlane;
+	plane.normal = triangle.normal;
+	plane.distance = XMVector3Dot(triangle.normal, triangle.p0).m128_f32[0];
+	//レイと平面が当たっていなければ、当たっていない
+	if (!CheckRay2Plane(ray, plane, distance, &interPlane)) { return false; }
+	//レイと平面が当たっていたので、距離と交点が書き込まれた
+	//レイと平面の交点が三角形の内側にあるか判定
+	const float epslion = 1.0e-5f; //誤差吸収用の微小な値
+	XMVECTOR m;
+	//辺p0_p1について
+	XMVECTOR pt_p0 = triangle.p0 - interPlane;
+	XMVECTOR p0_p1 = triangle.p1 - triangle.p0;
+	m = XMVector3Cross(pt_p0, p0_p1);
+	//辺の外側であれば当たっていないので判定を打ち切る
+	if (XMVector3Dot(m, triangle.normal).m128_f32[0] < -epslion) { return false; }
+	//辺p1_p2について
+	XMVECTOR pt_p1 = triangle.p1 - interPlane;
+	XMVECTOR p1_p2 = triangle.p2 - triangle.p1;
+	//辺の外側であれば当たっていないので判定を打ち切る
+	if (XMVector3Dot(m, triangle.normal).m128_f32[0] < -epslion) { return false; }
+	//辺p2_p0について
+	XMVECTOR pt_p2 = triangle.p2 - interPlane;
+	XMVECTOR p2_p0 = triangle.p0 - triangle.p2;
+	//辺の外側であれば当たっていないので判定を打ち切る
+	if (XMVector3Dot(m, triangle.normal).m128_f32[0] < -epslion) { return false; }
+	//内積なので、当たっている
+	if (inter)
+	{
+		*inter = interPlane;
+	}
+	return true;
+
+}

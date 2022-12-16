@@ -40,4 +40,16 @@ public:
 
 	//法線ベクトル
 	DirectX::XMVECTOR normal;
+
+	void ComputeNoemal();
+};
+///<summary>
+///レイ(半直球)
+/// </summary>
+struct Ray
+{
+	//視点座標
+	DirectX::XMVECTOR start = { 0,0,0,1 };
+	//方向
+	DirectX::XMVECTOR dir = { 1,0,0,0 };
 };
